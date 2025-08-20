@@ -13,6 +13,16 @@ from langchain_community.document_loaders import WikipediaLoader
 import os
 from dotenv import load_dotenv
 
+import logging
+
+flagged_logger = logging.getLogger("flagged_logger")
+flagged_logger.setLevel(logging.INFO)
+fh = logging.FileHandler("flagged_incorrect.log")
+formatter = logging.Formatter("%(asctime)s %(message)s")
+fh.setFormatter(formatter)
+if not flagged_logger.hasHandlers():
+    flagged_logger.addHandler(fh)
+
 load_dotenv()
 API_KEY = os.environ.get("GOOGLE_API_KEY")
 if not API_KEY:
@@ -66,7 +76,7 @@ historyAwareRetriever = create_history_aware_retriever(
 def initialize_state(state: GraphState):
     question = state["question"]
     messages = [HumanMessage(content=question)]
-    return {"messages": messages}
+    return {"messages": messages, "question": question}
 
 def retrieveDocuments(state: GraphState):
     question = state["question"]
@@ -78,9 +88,9 @@ def retrieveDocuments(state: GraphState):
             retrieved_docs = retrieved_docs_output
     except Exception as e:
         pass
-    return {"retrievedDocs": retrieved_docs}
+    return {"retrievedDocs": retrieved_docs, "question": question}
 
-llm = ChatGoogleGenerativeAI(model="gemini-2.5-pro", google_api_key=API_KEY)
+llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash", google_api_key=API_KEY)
 ragPrompt = ChatPromptTemplate.from_messages([
     ("system", "You are a helpful chatbot for a company. Answer the user's question truthfully based only on the provided context. If you don't know the answer, politely state that you can't find the information. Context: {context}"),
     ("user", "{question}"),
@@ -91,10 +101,11 @@ def initialResponse(state: GraphState) -> GraphState:
     retrievedDocs = state["retrievedDocs"]
     question = state["question"]
     if not retrievedDocs:
-        return {"initialResponse": "No relevant documents found."}
+        flagged_logger.info(f"Not in Vector Store | Q: {question}")
+        return {"initialResponse": "No relevant documents found.", "question": question}
     context = "\n\n".join(doc.page_content for doc in retrievedDocs)
     response = ragChain.invoke({"context": context, "question": question})
-    return {"initialResponse": response}
+    return {"initialResponse": response,  "question": question}
 
 selfCheckPrompt = PromptTemplate(
     template="""
@@ -127,7 +138,11 @@ def selfCheck(state: GraphState) -> GraphState:
         "retrievedDocs": context,
         "initialResponse": initial_response
     })
-    return {"selfCheckResult": result}
+
+    if "Incorrect" in result:
+        flagged_logger.info(f"Flagged Incorrect | Q: {question} | Context: {context} | Initial: {initial_response}")
+    
+    return {"selfCheckResult": result, "question": question}
 
 def sentimentAnalysis(state: GraphState) -> GraphState:
     question = state["question"]
@@ -137,7 +152,7 @@ def sentimentAnalysis(state: GraphState) -> GraphState:
     )
     sentimentChain = sentimentPrompt | llm | StrOutputParser()
     sentiment = sentimentChain.invoke({"question": question})
-    return {"sentiment": sentiment.strip().lower()}
+    return {"sentiment": sentiment.strip().lower(), "question": question}
 
 rewritePrompt = PromptTemplate(
     template="""
@@ -164,7 +179,7 @@ def rewrittenResponseNode(state: GraphState) -> GraphState:
         "retrieved_docs": context,
         "self_check_result": selfCheckResult
     })
-    return {"finalResponse": rewrittenResponse}
+    return {"finalResponse": rewrittenResponse, "question": question}
 
 workflow = StateGraph(GraphState)
 workflow.add_node("initialize_state", initialize_state)

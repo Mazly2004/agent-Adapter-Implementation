@@ -53,10 +53,12 @@ h1 {
     background: #d4edda;
     padding: 10px;
     border-radius: 5px;
+    white-space: pre-wrap;
 }
 
 .rewritten-response {
     background: #cce5ff;
     padding: 10px;
     border-radius: 5px;
+    white-space: pre-wrap;
 }

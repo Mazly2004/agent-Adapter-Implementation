@@ -4,6 +4,8 @@ from pydantic import BaseModel
 from lang_app_module import app as lang_app
 from langchain_core.messages import HumanMessage
 
+import os
+
 app = FastAPI()
 
 # Allow all origins for development (change in production)
@@ -30,3 +32,12 @@ async def ask(request: QueryRequest):
         "finalResponse": final_state.get("finalResponse"),
         "selfCheckResult": final_state.get("selfCheckResult"),
     }
+
+@app.get("/logs")
+async def get_logs():
+    log_path = "flagged_incorrect.log"
+    if not os.path.exists(log_path):
+        return {"logs": []}
+    with open(log_path, "r", encoding="utf-8") as f:
+        logs = f.readlines()
+    return {"logs": logs}
