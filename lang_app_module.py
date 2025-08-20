@@ -58,7 +58,7 @@ contextualizePrompt = ChatPromptTemplate.from_messages([
     ("user", "{input}"),
 ])
 historyAwareRetriever = create_history_aware_retriever(
-    llm=ChatGoogleGenerativeAI(model="gemini-2.5-pro"),
+    llm=ChatGoogleGenerativeAI(model="gemini-2.5-flash"),
     retriever=retriever,
     prompt=contextualizePrompt
 )

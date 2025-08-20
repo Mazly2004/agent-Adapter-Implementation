@@ -48,3 +48,15 @@ h1 {
 .error {
     color: red;
 }
+
+.initial-response {
+    background: #d4edda;
+    padding: 10px;
+    border-radius: 5px;
+}
+
+.rewritten-response {
+    background: #cce5ff;
+    padding: 10px;
+    border-radius: 5px;
+}

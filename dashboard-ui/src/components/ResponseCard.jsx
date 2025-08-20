@@ -6,12 +6,15 @@ const ResponseCard = ({ question, initialResponse, rewrittenResponse, sentiment,
             <h3>Input Question</h3>
             <p>{question}</p>
             <h3>Initial Response</h3>
-            <p>{initialResponse}</p>
+            <div className='initial-response'>
+                <p>{initialResponse}</p>
+            </div>
+            
             {rewrittenResponse && (
-                <>
+                <div className="rewritten-response">
                     <h3>Rewritten Response</h3>
                     <p>{rewrittenResponse}</p>
-                </>
+                </div>
             )}
             <h3>Sentiment</h3>
             <p>{sentiment}</p>

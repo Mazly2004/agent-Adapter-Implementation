@@ -18,7 +18,7 @@ function App() {
 
   return (
     <div style={{ maxWidth: 600, margin: "2rem auto", fontFamily: "sans-serif" }}>
-      <h2>Minimalist RAG Dashboard</h2>
+      <h2>Adapter Analysis Dashboard</h2>
       <input
         style={{ width: "100%", padding: 8, fontSize: 16 }}
         value={question}
